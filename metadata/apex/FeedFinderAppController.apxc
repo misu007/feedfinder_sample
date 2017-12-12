@@ -1,0 +1,285 @@
+global class FeedFinderAppController {
+    public  String getOrgUrl{get;set;}
+    private String cKey {get;set;}
+    public String profileImg {get;set;}
+    public  String loginURL {get;private set;}
+    public  String appURL {get;private set;}
+    public  String infoURL {get;private set;}
+    public String tagListJSON {get;set;}
+
+    private String saltForGaUserId;
+    
+    private final String cryptoKey1 = 'salt';
+    private String cryptoKey;
+    
+    public String searchWord {get;set;}
+    public String token  {get;set;}
+    public String myId;
+    
+    public Transient String searchResultJson {get;set;}
+    
+    //エラー時
+    public String errorMessage {get;set;}
+
+    public Transient String feedsJson {get;set;}
+    public String gaUserId {get;set;}
+    
+    //Logout
+    public  String logoutMessage{get;set;}
+    
+    public FeedFinderAppController(){
+        token = '';
+        try{
+            feedsJson = '';
+            FeedFinderAppSetting__c ffs = FeedFinderAppSetting__c.getOrgDefaults();
+            cKey = ffs.cKey__c;
+            loginURL = ffs.loginURL__c;
+            appURL = ffs.rURL__c;
+            infoURL = ffs.infoURL__c;
+            getOrgUrl = ffs.orgURL__c;
+            saltForGaUserId = ffs.SaltForGaUserID__c;
+            cryptoKey = cryptoKey1 + ffs.FeedFinderApp__secret8chars__c;
+            token = myDecrypt(ApexPages.currentPage().getCookies().get('access_token').getValue());
+            myId = myDecrypt(ApexPages.currentPage().getCookies().get('id').getValue());
+        } catch(Exception e){
+            System.debug('ERROR:'+e.getMessage());
+        }         
+    }
+    
+    public PageReference validateUser(){
+        PageReference ref = null;                    
+        PageReference thispage = ApexPages.currentPage();
+        Map<String, String> gets = thispage.getParameters();
+        if (gets.containsKey('access_token') && gets.containsKey('id') && gets.containsKey('instance_url')){
+            ApexPages.currentPage().setCookies(new List<Cookie>{newCookieFromGets(gets, 'access_token'), newCookieFromGets(gets, 'id'), newCookieFromGets(gets, 'instance_url')});
+            ref = new PageReference(appURL);        
+            ref.setRedirect(true);            
+        } else {
+            Boolean bauth = false;            
+            if(token != null && token.length() > 5){
+                try {
+                    String ckToken = myDecrypt(ApexPages.currentPage().getCookies().get('access_token').getValue());
+                    String ckId = myDecrypt(ApexPages.currentPage().getCookies().get('id').getValue());
+                    String ckInstance = myDecrypt(ApexPages.currentPage().getCookies().get('instance_url').getValue());        
+                    updateLoggedInUser();
+                    getCurrentRegisteredTags();
+                    if(this.loggedInUserId != null && this.loggedInUserId.length() > 5){
+                        if(ckId.contains(this.loggedInUserId) && EncodingUtil.urlDecode(ckInstance , 'UTF-8').contains(getOrgUrl)){
+                            bauth = true;
+                            gaUserId = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-512', Blob.valueOf(ckId + saltForGaUserId)));
+                        }
+                    } 
+                } catch(Exception e) {
+                }
+                if(!bauth){
+                    ApexPages.currentPage().setCookies(new List<Cookie>{deleteCookie('access_token'), deleteCookie('id'), deleteCookie('instance_url')});
+                    ref = new PageReference(infoURL + '?ct=invalid_account');        
+                    ref.setRedirect(true);
+                }
+            } else {
+                ref = new PageReference(loginURL);        
+                ref.setRedirect(true);
+            }            
+        }
+        return ref;
+    }
+    
+    private Cookie newCookieFromGets(Map<String, String> gets, String key){
+        return new Cookie(key, myEncrypt(gets.get(key)), null, -1, true);
+    }
+    private Cookie deleteCookie(String key){
+        return new Cookie(key, '', null, 0, true);
+    }
+    
+    public void revokeSession(){
+        try{
+            String endpoint = 'https://login.salesforce.com/services/oauth2/revoke';
+            String includeQuery = endpoint + '?token=' + encodingUtil.urlencode(this.token,'UTF-8');
+            webCallout(includeQuery);
+            logoutMessage = 'complete';
+        } catch (Exception e){
+            logoutMessage = 'Error!! ' + e.getLineNumber() + ':' + e.getMessage();
+        }
+    }
+    
+    private void webCallout(String endpoint) {
+        Http myh = new Http();            
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint(endpoint);
+        req.setMethod('GET');            
+        HttpResponse res = myh.send(req);
+        if(res.getStatusCode()  > 300 && res.getStatusCode()  < 400){
+            webCallout(res.getHeader('Location'));
+        }
+    }
+    
+    public String             loggedInUserId {get; private set;}
+    public List<Tag__c>       tagList        {get; private set;}
+    
+    private String myEncrypt(String otext){
+        return EncodingUtil.convertToHex(Crypto.encryptWithManagedIV('AES128', Blob.valueOf(cryptoKey), Blob.valueOf(otext)));
+    }
+    private String myDecrypt(String etext){
+        return Crypto.decryptWithManagedIV('AES128', Blob.valueOf(cryptoKey), EncodingUtil.convertFromHex(etext)).toString();
+    }    
+    
+    public void updateProfileMe(){
+        try {
+        String jsons = ChatterRestAPI.getProfileInfo(this.token, this.myId);
+        Map<String, Object> jsono = (Map<String, Object>) JSON.deserializeUntyped(jsons);
+           //Object photos = jsono.get('photos');
+            // profileImg = 'te';
+        	profileImg = JSON.serialize(jsono.get('photos'));
+        } catch (Exception ex){
+            profileImg = '{"thumbnail": "null"}';
+        }
+    }
+    
+    public void updateFeedElementsJson(){
+        
+        try{
+            String pageToken = null;
+            String feedElementsJson = '';
+            for(Integer i = 0; i < 3; i++) {
+                feedElementsJson = ChatterRestAPI.getFeedElementsByKeyword(this.token, this.searchWord, pageToken);
+            }            
+            feedsJson = feedElementsJson;
+        } catch(Exception e){
+            System.debug('ERROR:'+e.getMessage());
+        } 
+        
+    }
+    
+    public void updateFeedElementsOnTagSelected() {
+        String selectedTagId = Apexpages.currentPage().getParameters().get('selectedTagId');
+        getFeedElementsByTagId(selectedTagId);
+    }
+    public void updateFeedElementsOnLoadPage() {
+        getFeedElementsOfMyNews();
+    }
+    
+    private void getFeedElementsByTagId(String selectedTagId) {
+        if (selectedTagId != '_') {
+            //this.updateLoggedInUser();
+            List<TagContent__c> tagContentList = [SELECT FeedId__c From TagContent__c WHERE Tag__c =: selectedTagId AND UserId__c =: this.loggedInUserId];
+            List<String> feedIdList = new List<String>();
+            for (TagContent__c t : tagContentList) feedIdList.add(t.FeedId__c);
+            if(!feedIdList.isEmpty()){
+                String batchResultsJson = ChatterRestAPI.getFeedElementsByIds(this.token, feedIdList);
+                
+                feedsJson = batchResultsJson;
+                
+            } else {
+                feedsJson = '';
+            }
+        }
+    }
+    private void getFeedElementsOfMyNews() {
+        //this.updateLoggedInUser();
+        try {
+            String batchResultsJson = ChatterRestAPI.getFeedElementIdsOfMyNews(this.token);        
+            feedsJson = batchResultsJson;
+        } catch(Exception e){
+            errorMessage = e.getMessage();  
+        }
+    }
+    
+    
+    
+    public void releaseTag(){
+        String selectedFeedId = Apexpages.currentPage().getParameters().get('selectedFeedId');       
+        String selectedTagId = Apexpages.currentPage().getParameters().get('selectedTagId');
+        //this.updateLoggedInUser();
+        List<TagContent__c> tcs = [SELECT Id From TagContent__c WHERE FeedId__c = :selectedFeedId AND Tag__c =: selectedTagId AND UserId__c =: this.loggedInUserId];
+        for(TagContent__c tc : tcs){
+            delete tc;
+        }
+    }
+    
+    public void delTag(){
+        String selectedTagId = Apexpages.currentPage().getParameters().get('selectedTagId');
+        //this.updateLoggedInUser();
+        Tag__c tg = [SELECT Id FROM Tag__c WHERE Id = :selectedTagId LIMIT 1];
+        delete tg;        
+        feedsJson = '';
+    }
+    
+    
+    public void updateLoggedInUser() {
+        if (this.loggedInUserId == null) {
+            String userJson = ChatterRestAPI.getUserByUserId(this.token, null).replaceAll('\n', '');
+            Map<String, Object> loggedInUserInfo = (Map<String, Object>)JSON.deserializeUntyped(userJson);
+            this.loggedInUserId = String.valueof(loggedInUserInfo.get('id'));
+        }
+    }
+    public void updateTagList() {
+        
+        //this.updateLoggedInUser();
+        this.tagList = [SELECT Id, Name, ContentsCount__c FROM Tag__c WHERE UserId__c  =: this.loggedInUserId ORDER BY Name ASC];
+    }
+    public void tagFeedItem() {
+        
+        String feedId = Apexpages.currentPage().getParameters().get('feedId');
+        String tagListJson = Apexpages.currentPage().getParameters().get('tagList');
+        System.debug(Logginglevel.ERROR, tagListJson);
+        List<Map<String, String>> tagList = (List<Map<String, String>>)System.JSON.deserialize(tagListJson, List<Map<String, String>>.class);
+        
+        // フィード ID が指定されている場合のみ、処理を続行
+        if (!isNullOrEmpty(feedId)) {
+                        
+            // 新規に作成されたタグがある場合は、追加する
+            List<Tag__c> newTagList = new List<Tag__c>();
+            Set<String> insertedTags = new Set<String>();
+            for (Map<String, String> tag : tagList) {
+                if (tag.get('id') == 'new' && !insertedTags.contains(tag.get('word'))) {
+                    insertedTags.add(tag.get('word'));
+                    newTagList.add(new Tag__c(Name=tag.get('word'), UserId__c=this.loggedInUserId));
+                } 
+            }
+            insert newTagList;
+            
+            List<TagContent__c> tcs = [SELECT Tag__c FROM TagContent__c WHERE FeedId__c = :feedId AND UserId__c = :this.loggedInUserId];
+            Set<String> alreadyTagIds = new Set<String>();
+            for (TagContent__c tc : tcs){
+                alreadyTagIds.add(tc.Tag__c);
+            }
+            
+            // 新規に追加されたタグ、または既存のタグに対してフィードコンテンツを追加する
+            List<TagContent__c> newTagContentList = new List<TagContent__c>();
+            for (Tag__c newTag : newTagList) {
+                newTagContentList.add(new TagContent__c(Tag__c=newTag.Id, FeedId__c=feedId, UserId__c=this.loggedInUserId));
+            }
+            Set<String> processedTags = new Set<String>();
+            for (Map<String, String> tag : tagList) {
+                if (tag.get('id') != 'new' && !alreadyTagIds.contains(tag.get('id')) && !processedTags.contains(tag.get('id'))) {
+                    processedTags.add(tag.get('id'));
+                    newTagContentList.add(new TagContent__c(Tag__c=tag.get('id'), FeedId__c=feedId, UserId__c=this.loggedInUserId));
+                } 
+            }
+            insert newTagContentList;
+        }
+    }
+    
+    private void getCurrentRegisteredTags(){
+        List<TagContent__c> tcs = [SELECT Tag__c, FeedId__c FROM TagContent__c WHERE UserId__c = :this.loggedInUserId];
+        Map<String, Set<String>> feeds = new Map<String, Set<String>>();
+        for(TagContent__c tc : tcs){            
+            if(feeds.containsKey(tc.FeedId__c)){
+                Set<String> tagIds = feeds.get(tc.FeedId__c);
+                if(!tagIds.contains(tc.Tag__c)){
+                    tagIds.add(tc.Tag__c);
+                }
+            } else {
+                Set<String> tagIds = new Set<String>();
+                tagIds.add(tc.Tag__c);
+                feeds.put(tc.FeedId__c, tagIds);
+            }            
+        }
+        tagListJSON = JSON.serialize(feeds);
+    }
+    
+    private Boolean isNullOrEmpty (Object o) {
+        return o == null || String.valueOf(o).trim() == '';
+    }
+    
+}

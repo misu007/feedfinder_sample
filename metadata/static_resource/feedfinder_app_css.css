@@ -1,0 +1,476 @@
+
+html, body {
+    height: 100%;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.feed-finder .home-link {
+	position: relative;    
+    
+}
+.feed-finder .profile-me-img {
+    width: 40px;
+}
+
+.feed-finder .mytarget-focus {
+	background-color: #d8edff;
+}
+
+.feed-finder .left-menu-wrap {
+    overflow-y: scroll;
+    height: calc(100vh - 80px);    
+}
+.feed-finder .left-menu-wrap::-webkit-scrollbar {
+    display:none;
+}
+body::-webkit-scrollbar {
+    display:none;
+}
+
+
+.title-logo {
+    position: absolute;
+    top:49px;
+    left: 123px;
+}
+.feed-finder .brand-image {
+    width: 33px;
+    margin: 0 30px;
+    cursor: pointer;
+}
+.feed-finder .myfilter {
+    padding: 15px 15px 0 0;
+}
+.feed-finder .logout-message {
+    font-size: x-large;
+    text-align: center;
+    margin-top: 30vh;
+} 
+
+.feed-finder .my-option-title {
+    font-size: 1rem;
+    line-height: 1.25;
+    color: #54698d;
+    border-left: 2px solid #1589ee;
+    padding-left: 10px;
+    font-weight: 300;
+}
+
+.feed-finder .logout-link span{
+    color: rgba(0, 198, 183, .5);
+    font-size: 20px;
+}
+.feed-finder .logout-link:hover {
+    text-decoration: none;
+}
+
+.feed-finder .my-right-menu {
+    right: 5px;
+    left: inherit;
+    top: 30px;
+    margin-top: 0;
+    transition-duration: .3s;
+    opacity: 0;
+}
+.feed-finder .my-right-menu.active {
+    top: 60px;
+    opacity: 1;
+}
+.feed-finder .my-right-menu li.slds-dropdown__item a {
+    padding: 6px 18px;
+}
+
+.feed-finder .slds-card__body {
+    padding: 6px 24px;
+    margin-top: -12px;
+}
+
+.feed-finder .slds-input.slds-input-search {    
+    height: 36px;
+}
+
+.feed-finder .my-navigation-menu {
+    display: block;
+    position: fixed;
+    z-index: 999999;
+    width: 100%;
+    height: 60px;
+    background-color: #fff;
+    border-bottom: 2px solid rgb(34, 139, 235);
+    padding: 10px;
+}
+
+.feed-finder .my-navigation-menu .my-nav-right {
+    margin-top: 6px;
+    width: 15%;
+    float: left;
+}
+.feed-finder .my-navigation-menu .my-nav-right .my-icon {
+    padding: 0 20px;
+    color: rgba(255,255,255,.4);
+}
+
+.feed-finder figure.slds-image--card {
+    max-width: 480px;
+}
+.feed-finder .slds-image__crop img {
+    max-width: 100%;
+}
+
+.feed-finder .mymenu {
+    width: 20%;
+    position: fixed;
+    background-color: transparent;
+    z-index: 2;
+}
+.feed-finder .mymenu p {
+    color: #16325c;
+}
+.feed-finder .slds-tree__item a {
+    color: #16325c;
+}
+.feed-finder .slds-tree__item {
+    border: 1px solid transparent;
+    border-left: 2px solid transparent; 
+}
+
+.feed-finder .slds-tree__item:hover, .feed-finder .slds-tree__item:focus, .slds-tree__item.active {
+    cursor: pointer;
+    background: rgba(216, 237, 255, 0.3);
+    border-top: 1px solid #d8dde6;
+    border-bottom: 1px solid #d8dde6;
+    border-left: 2px solid transparent;
+    /*border-radius: 2px;*/
+}
+
+
+
+.mysearchform {
+    text-align: center;
+    padding: 0 30px;
+    float: left;
+    width: 70%;
+}
+
+.myright{
+    width:70% !important;
+    background-color: transparent;
+    padding-left: 20%;
+}
+.feed-finder {
+    height: 100%;
+}
+.slds-wrap {
+    height: 100%;
+}
+.slds-col {
+    height: 100%;
+}
+.slds-feed {
+    background-color: transparent;
+    padding: 15px;
+}
+.feed-finder .slds-feed .slds-feed__item{
+    padding: 20px 20px;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border: 0;
+    word-wrap: break-word;
+    opacity: 0.9;
+}
+.feed-finder .slds-feed__list .slds-feed__item.feed-show-active {
+    box-shadow: 0 1px 2px rgba(0,0,0,.12);
+    opacity: 1;
+}
+
+.feed-finder .slds-tree [aria-level="1"] > .slds-tree__item {
+    margin-left: 1.5rem;
+    padding-left: 1rem;
+}
+
+.slds-form--compound {
+    padding: 15px;
+    background-color: #ffffff;
+}
+.feed-finder .slds-comment__overflow {
+    padding-top: 0;
+    padding-left: 0;
+    /*background-color: #f0f8fc;*/
+    padding-bottom: 0;
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+}
+.slds-comment__replies .mycomment {
+    padding-top: 10px;
+    border-top: 1px solid #d8dde6;
+}
+.slds-comment__replies .mycomment.noborder {
+    border-top: none;
+}
+.feed-finder .slds-comment__replies .slds-avatar {
+    border: 1px solid white;
+}
+
+.hidden {
+    display: none;
+}
+
+.feed-finder .slds-spinner_container {
+    position : fixed;
+    background-color: rgba(255,255,255,0.7);
+    
+}
+.feed-finder .slds-wrap {
+    padding-top: 60px;
+}
+
+.feed-finder .slds-tree [aria-expanded="false"] > .slds-tree__item > .slds-button[aria-controls] > .slds-button__icon, .feed-finder .slds-tree [aria-expanded="false"] > .slds-tree__item > .slds-button[aria-controls] > span > .slds-button__icon {
+    transition: 0.1s transform ease-in-out;
+}
+
+
+.feed-finder .slds-box {
+  word-wrap: break-word;  
+}
+
+.feed-finder .slds-tree__item a:focus {
+   outline: 0;
+}
+.feed-finder .slds-post__content {
+    margin-top: 1.5rem;
+    font-size: 1em;
+}
+.feed-finder .slds-comment__content {
+    padding: 0.5rem 0;
+    font-size: 1em;
+}
+.feed-finder .slds-comment__content p{
+    margin-bottom: 4px;
+}
+#tab1, #tab2, #tab3, #page-top, #count-indicator {
+    display: none;
+}      
+
+
+.feed-finder .slds-feed {
+        max-width: calc(100% - 10px);
+    /*max-width: 60rem;*/
+}    
+
+.feed-finder .slds-comment__replies {
+    padding: 0.5rem 20px 1rem 20px;
+    margin: 1rem -20px -20px -20px;
+    background-color: rgb(250, 250, 249);
+    border: 1px solid #d8dde6;
+    border-right-color: #fafafa;
+    border-left-color: #fafafa;
+    /*border-top: 1px solid rgb(216, 221, 230);*/
+   /* border-bottom: 1px solid rgb(216, 221, 230);*/    
+}
+
+.feed-finder .slds-text-body--small, .feed-finder .slds-text-body--small .mytarget-post-date{
+    color:rgb(112, 110, 107);
+}
+.feed-finder .slds-avatar--medium {
+        width: 2.4rem;
+    height: 2.4rem;
+}
+.feed-finder .slds-avatar--small {
+    width: 2rem;
+    height: 2rem;
+}
+
+.feed-finder .slds-badge {
+    text-transform: none;
+}
+.feed-finder .myhighlight {
+    background: linear-gradient(transparent 0%, #ffff66 0%);
+    /*background: linear-gradient(transparent 60%, #ffff66 60%);*/
+}
+
+.feed-finder .slds-feed__item > .slds-media .slds-media__body .slds-post__content,
+.feed-finder .slds-feed__item > .slds-media .slds-media__body .slds-list--horizontal,
+.feed-finder .slds-feed__item > .slds-media .slds-media__body .slds-box,
+.feed-finder .slds-feed__item > .slds-media .slds-media__body .slds-my,
+.feed-finder .slds-feed__item > .slds-media .slds-media__body .slds-tags{
+    margin-left: -3rem;
+    margin-right: -0.5rem;
+    margin-top: 1rem;
+}
+
+
+.feed-finder .slds-media__body > .slds-list--horizontal{
+    margin-top: 6px;
+}
+.feed-finder .slds-comment__replies .slds-media__body > .slds-list--horizontal{
+    margin-top: 0;
+}
+
+
+.feed-finder .slds-p-around--medium {
+    padding: 1.5rem 2rem 0.5rem 1.5rem;
+}
+
+.feed-finder .fa-notactive {
+    color: #d8dde6;
+}
+
+.feed-finder .fa-active {
+    color: #00396b;
+}
+
+.feed-finder .my-filter-card {
+    background-color: rgba(255,255,255,0.5);
+    border: 1px solid #dfe4ee;
+    border-radius: 6px;
+    margin-bottom: 1rem; 
+}
+.feed-finder .slds-card + .slds-card {
+    margin-top: 0;
+}
+
+.feed-finder .my-filter-card .slds-form-element {
+    margin-top: 12px;
+}
+.feed-finder .my-filter-card .slds-form-element .my-second {
+    margin-top: 5px;
+}
+.feed-finder .my-filter-card .slds-form-element.filter-div {
+    margin-bottom: 18px;
+}
+
+.feed-finder .slds-form-element__addon {
+    width: 40%;
+}
+
+.feed-finder #rightcontentgrid .my-right-left {
+    width: 100%;
+    
+}
+.feed-finder #rightcontentgrid .my-right-right {
+    width: 320px;
+    opacity: 0;
+}
+
+.feed-finder #rightcontentgrid.has2 .my-right-left {
+    width: calc(100% - 320px);
+    min-width: 450px;
+}
+.feed-finder #rightcontentgrid.has2 .my-right-right {
+    width: 320px;
+    opacity: 1;
+    padding-right: 24px;
+}
+
+.feed-finder #rightcontentgrid .my-right-left, .feed-finder #rightcontentgrid .my-right-right {
+    transition-duration: .3s;
+    transition-timing-function:ease;
+}
+
+.feed-finder .slds-card__header {
+   margin-top: 14px;
+    margin-bottom: 14px;
+}
+
+.feed-finder .my-white {
+    color: #fff;
+}
+
+.myinputbox{
+    width: 100%;
+    margin: 0;
+}
+
+p.my-badges {
+    margin-top: 20px;
+	line-height: 2em;
+}
+
+p.my-badges span.slds-badge {
+    margin: 5px;
+    
+}
+
+#page-top {
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+    font-size: 40px;
+}
+#page-top a {
+    background-color: rgba(0,57,107,0.14);
+    text-decoration: none;
+    color: rgba(255,255,255,.7);
+    width: 80px;
+    padding: 20px 0;
+    text-align: center;
+    display: block;
+    border-radius: 40px;
+}
+
+#count-indicator {
+    position: fixed;
+    top: 80px;
+    right: 40px;
+    width: 240px;
+    
+}
+
+#count-indicator .my-filter-card {
+    background-color: rgba(0,57,107,0.06);
+}
+
+.feed-finder .right-welcome-icon {
+	padding: 0;
+    width: 50%;
+    margin: 0 auto 20px auto;
+}
+
+.feed-finder .slds-card__body.my-message {
+    margin-top: 15px;
+    line-height: 1.4rem;
+    color: rgba(22, 50, 92, 0.5);
+    font-style: oblique;
+}
+.feed-finder .slds-card__body.my-message a{ 
+	color: rgba(0, 112, 210, 0.7);
+}
+.feed-finder .slds-card__body.my-message p{
+	margin-bottom: 1rem;
+}
+.feed-finder .my-menu-link-blue {
+    color: #005fb2;
+    font-size: 0.75rem;
+}
+
+.feed-finder .my-icon-container {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    border-radius: 10px;
+    margin-top: 5px;
+}
+.feed-finder .my-icon-like {
+    background-color: rgb(0,205,191);
+    padding: 3px;
+    margin: -1px 4px 0 0;
+    position: inherit;
+}
+.feed-finder .my-user-icon-container {
+    margin-top: -5px;
+    margin-right: -20px;
+    width: 2.2rem;
+    height: 2.2rem;
+}
+
+.feed-finder .my-user-icon {
+    color: #fff;
+}
+
+.feed-finder .slds-spinner:before, .feed-finder .slds-spinner:after, .feed-finder .slds-spinner__dot-a:before, .feed-finder .slds-spinner__dot-b:before, .feed-finder .slds-spinner__dot-a:after, .feed-finder .slds-spinner__dot-b:after {
+background-color: rgba(0, 112, 210, 0.8);    
+}

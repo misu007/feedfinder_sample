@@ -1,0 +1,441 @@
+<apex:page controller="FeedFinderAppController" action="{!validateUser}" id="Page" standardStylesheets="false" showHeader="false" sidebar="false" applyHtmlTag="false" applyBodyTag="false">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <link rel="shortcut icon" href="{!$Resource.favicon}"/>
+            <link rel="icon" type="image/png" href="{!$Resource.favicon}"/>
+            <title>FeedFinder</title>
+            <apex:stylesheet value="{!URLFOR($Resource.SLDS212, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+            <apex:stylesheet value="{!$Resource.feedfinder_app_css}"/>
+            <apex:stylesheet value="{!URLFOR($Resource.font_awesome, 'font-awesome-4.7.0/css/font-awesome.css')}"/>
+            <script>
+            var tags = new Object();
+            var selectedTags = new Array();
+            var targetFeedId = '';
+            var debugMode = 'OFF';
+            var current_scrollY;
+            var selectedMyTag = '';
+            var contentUrl = 'https://[depend_on_your_salesforce_org].content.force.com/sfc/servlet.shepherd/version/renditionDownload?rendition=THUMB720BY480&';
+            var xlsIconUrl = "{!URLFOR($Resource.SLDS212, 'assets/icons/doctype/excel_120.png')}";
+            var xlsIconUrl = "{!URLFOR($Resource.SLDS212, 'assets/icons/doctype/pdf_120.png')}";
+            var likeIconURL = "{!URLFOR($Resource.SLDS212, 'assets/icons/utility/like_60.png')}";
+            var logoImageURL = "{!URLFOR($Resource.feedfinder_icon2)}";
+            var selectedMenuId = 'home';
+            var current_active_feed_no = 1;
+            </script>            
+        </head>
+        <body>   
+            <!--Action Function-->
+            <apex:form >
+                <!--Log out-->
+                <apex:actionFunction action="{!revokeSession}" name="af_logout" reRender="logoutStatus" oncomplete="completeLogout();">
+                </apex:actionFunction>
+                
+                <!-- Change profile-->
+                <apex:actionFunction action="{!updateProfileMe}" name="af_changeProfileMe" reRender="profileInfo" oncomplete="completeProfile();">
+                </apex:actionFunction>
+                
+                <!-- Get news-->
+                <apex:actionFunction action="{!updateFeedElementsOnLoadPage}" name="af_getNews" reRender="feedsJsonVal" oncomplete="completeNews();">
+                </apex:actionFunction>
+                
+                <!-- Search by word-->
+                <apex:actionFunction action="{!updateFeedElementsJson}" name="performSearchAF" reRender="feedsJsonVal" oncomplete="completeDoSearch();">
+                    <apex:param assignTo="{!searchWord}" name="searchWord" value="" />
+                </apex:actionFunction>
+                
+                <!-- Update Tag Select List-->                
+                <apex:actionFunction name="af_tagFeedItem" action="{!tagFeedItem}" reRender="suggestedTagInitializing" oncomplete="af_updateTagList()">
+                    <apex:param name="feedId"  value="" />
+                    <apex:param name="tagList" value="" />
+                </apex:actionFunction>
+                
+                <!-- Initialize Suggested Tag-->
+                <apex:actionFunction name="af_updateTagList" action="{!updateTagList}" reRender="suggestedTagInitializing,tagList" oncomplete="initSuggestedTag();remakeMenuActive();">
+                </apex:actionFunction>
+                
+                <!-- Update Feed Elements on Tag Selected-->
+                <apex:actionFunction name="updateFeedElementsOnTagSelected" action="{!updateFeedElementsOnTagSelected}" reRender="feedsJsonVal" oncomplete="completeTagSearch();">
+                    <apex:param name="selectedTagId" value="" />
+                </apex:actionFunction>    
+                
+                <!-- Release Tag From Feed-->
+                <apex:actionFunction name="af_releaseTag" action="{!releaseTag}" reRender="feedsJsonVal" oncomplete="afterReleaseTags();">
+                    <apex:param name="selectedFeedId" value="" />
+                    <apex:param name="selectedTagId" value="" />
+                </apex:actionFunction>
+                <!-- Delete Tag -->
+                <apex:actionFunction name="af_delTag" action="{!delTag}" reRender="feedsJsonVal" oncomplete="afterDelTag();">
+                    <apex:param name="selectedTagId" value="" />
+                </apex:actionFunction>
+                
+            </apex:form>
+            
+            <!--Params-->
+            <apex:outputPanel id="staticParams">
+                <input type="hidden" name="dummy1" id="orgurl" value="{!getOrgUrl}"/>                                
+                <input type="hidden" name="dummy_loginurl" id="loginurl" value="{!loginURL}"/>                                
+                <input type="hidden" id="gaUserId" value="{!gaUserId}"/> 
+            </apex:outputPanel>
+            <apex:outputPanel id="feedsJsonVal">
+                <input type="hidden" name="dummy2" id="myid" value="{!feedsJson}"/>
+                <input type="hidden" id="errorMessage" value="{!errorMessage}"/>
+                <input type="hidden" id="tagListJSON" value="{!tagListJSON}"/>
+            </apex:outputPanel>
+            <apex:outputPanel id="profileInfo">
+                <input type="hidden" id="profileImg" value="{!profileImg}"/>
+            </apex:outputPanel>
+            <apex:outputPanel id="logoutStatus">
+                <input type="hidden" id="logoutMessage" value="{!logoutMessage}"/>
+            </apex:outputPanel>
+            <apex:outputPanel id="suggestedTagInitializing" >
+                <script>
+                function initSuggestedTag(){
+                    tags = new Object();
+                    <apex:repeat value="{!tagList}" var="tag">
+                        tags['{!tag.Id}'] = '{!tag.name}'
+                    </apex:repeat>
+                }
+                </script>
+            </apex:outputPanel>
+            <div id="tmpdatastrage">
+                <input type="hidden" name="dummy2" id="pocessedjson" value=""/>
+            </div>
+            
+            <div class="feed-finder" id="feed-finder-container">
+                <div class="my-navigation-menu">
+                    <div class="slds-m-bottom--x-large" style="margin-top: 0;margin-bottom: 0;float: left;width: 15%;">
+                        <div style="width: 33px; height: 33px; margin-top: 5px;">
+                        <img src="{!URLFOR($Resource.favicon)}" class="brand-image"/>
+                        </div>
+                    </div>                    
+                    <div class="mysearchform slds-text--center">
+                        <div class="slds-form-element myinputbox">
+                            <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon--left">
+                                <svg aria-hidden="true" class="slds-input__icon slds-icon-text-default">
+                                    <use href="{!URLFOR($Resource.SLDS212, 'assets/icons/utility-sprite/svg/symbols.svg#search')}"></use>
+                                </svg>
+                                <form id="searchWordForm" autocomplete="off">
+                                    <input id="searchWord" class="slds-input slds-input-search" type="text" reRender="panel" placeholder="Search word.." />
+                                </form>
+                            </div>
+                        </div>  
+                    </div>
+                    <div class="my-nav-right" style="text-align: right;">                        
+                        <a href="#" id="my-right-menu-tg" class="my-icon" style="margin-right:20px;">
+                            <span class="slds-avatar slds-avatar--circle slds-avatar--medium my-user-icon-container">
+                                <img id="myProfileImg" class="profile-me-img" src="{!URLFOR($Resource.SLDS212, 'assets/icons/action/user_120.png')}"/>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="slds-grid slds-wrap">
+
+                    <div class="slds-col slds-size--3-of-12 mymenu color-background-notification-badge-active">
+                        <div class="slds-tree_container" role="application">
+                            <h4 class="slds-text-heading--label" id="treeheading"></h4>
+                            <apex:outputPanel id="tagList">                
+                                <ul id="menu-list-ul" class="slds-tree left-menu-wrap" role="tree" aria-labelledby="treeheading"> 
+                                    <h2 class="slds-text-title--caps slds-p-around--medium">MENU</h2>
+                                    <li id="changetabbutton0" role="treeitem" aria-level="1" class="myitem">
+                                        <div class="slds-tree__item" id="menuitemhome">
+                                            <a href="#" tabindex="-1" role="presentation" class="slds-truncate home-link">
+                                                <span class="my-icon-container" style="background-color: rgb(85,106,140);">
+                                                    <img src="{!URLFOR($Resource.SLDS212, 'assets/icons/standard/home_60.png')}"/>
+                                                </span> <span style="padding-left: 30px;">Home</span>
+                                            </a>
+                                        </div>
+                                    </li>
+                                    <h2 class="slds-text-title--caps slds-p-around--medium">TAGS</h2>                             
+                                    <apex:repeat value="{!tagList}" var="tag">
+                                        <li role="treeitem" aria-level="1" class="myitem my-tab-select" data-tagid="{!tag.id}">
+                                            <div class="slds-tree__item" id="menuitem{!tag.id}">
+                                                <a href="#" tabindex="-1" role="presentation" class="slds-truncate">
+                                                    <i class="fa fa-tag" aria-hidden="true"></i> {!tag.Name} ({!tag.ContentsCount__c})</a>
+                                            </div>
+                                        </li>
+                                    </apex:repeat>
+                                </ul>
+                            </apex:outputPanel>
+                        </div>
+                        
+                    </div>
+                    <div class="slds-col slds-size--9-of-12 myright" id="rightcontent">
+                        <div class="slds-grid has2" id="rightcontentgrid">
+                            <div class="my-right-left">
+                                <div id="feedsarea">
+                                    <div id="tab0" class="tab-content tab-active">    
+                                        <div class="slds-feed" >
+                                            <ul class="slds-feed__list" id="feedsUlNews">                                
+                                            </ul>
+                                        </div>                            
+                                    </div>
+                                    <div id="tab1" class="tab-content">    
+                                        <div class="slds-feed" id="feedsarea">
+                                            <ul class="slds-feed__list" id="feedsUlSearch">                                
+                                            </ul>
+                                        </div>                            
+                                    </div>
+                                    <div id="tab2" class="tab-content">
+                                        <div class="slds-feed" id="feedsarea">
+                                            <ul class="slds-feed__list" id="feedsUlTag">                                
+                                            </ul>
+                                        </div>     
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="myfilter my-right-right">     
+                                <div id="otab1">
+                                    <article class="slds-card my-filter-card">
+                                        <div class="slds-card__header slds-grid">
+                                            <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                                                <div class="slds-media__body slds-truncate">
+                                                    <span class="my-option-title">SORT</span>
+                                                </div>
+                                            </header>
+                                        </div>
+                                        <div class="slds-card__body">                                    
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">Sort by</label>
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-select_container">
+                                                        <select class="slds-select" id="sortselectbox">
+                                                            <option value="---">---</option>
+                                                            <option value="sort-create">Post date</option>
+                                                            <option value="sort-group">Group name</option>
+                                                            <option value="sort-person">Post person</option>
+                                                            <option value="sort-like">Like count</option>
+                                                            <option value="sort-comment">Comment count</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="slds-form-element">
+                                                <div class="slds-form-element__control">
+                                                    <span class="slds-checkbox">
+                                                        <input type="checkbox" name="options"  id="ordercheckbox" checked="" />
+                                                        <label class="slds-checkbox__label" for="ordercheckbox">
+                                                            <span class="slds-checkbox--faux"></span>
+                                                            <span class="slds-form-element__label">Reverse order</span>
+                                                        </label>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            
+                                        </div>
+                                        <div class="slds-card__footer">
+                                            <button id="reset-sort-button" class="slds-button slds-button--neutral">Reset</button>
+                                        </div>
+                                    </article>                  
+                                    <article class="slds-card my-filter-card">
+                                        
+                                        <div class="slds-card__header slds-grid">
+                                            <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                                                <div class="slds-media__body slds-truncate">
+                                                    <span class="my-option-title">FILTER</span>
+                                                </div>
+                                            </header>
+                                        </div>
+                                        <div class="slds-card__body">
+                                            <form id="filterform" autocomplete="off">
+                                                <div class="slds-form-element filter-div" data-tclass="mytarget-post-date">
+                                                    <label class="slds-form-element__label">Post date</label>
+                                                    <div class="slds-form-element__control slds-input-has-fixed-addon">
+                                                        <span class="slds-form-element__addon">From </span>
+                                                        <input id="filter-date-from" class="slds-input" type="date" placeholder="" />
+                                                    </div>
+                                                    <div class="slds-form-element__control slds-input-has-fixed-addon my-second">
+                                                        <span class="slds-form-element__addon">To </span>
+                                                        <input id="filter-date-to" class="slds-input" type="date" placeholder="" />
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="slds-form-element">
+                                                <label class="slds-form-element__label">Published by</label>
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-select_container">
+                                                        <select class="slds-select" id="filter-published-by"></select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                                <div class="slds-form-element">
+                                                <label class="slds-form-element__label">Published to</label>
+                                                <div class="slds-form-element__control">
+                                                    <div class="slds-select_container">
+                                                        <select class="slds-select" id="filter-published-to"></select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                                          <!--                                      
+                                                <div class="slds-form-element filter-div" data-tclass="mytarget-post-person">
+                                                    <label class="slds-form-element__label">Post person</label>
+                                                    <div class="slds-form-element__control slds-input-has-fixed-addon">
+                                                        <span class="slds-form-element__addon">Include </span>
+                                                        <input id="filter-post-person" class="slds-input" type="text" placeholder="" />
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="slds-form-element filter-div" data-tclass="mytarget-group-name">
+                                                    <label class="slds-form-element__label">Group name</label>
+                                                    <div class="slds-form-element__control slds-input-has-fixed-addon">
+                                                        <span class="slds-form-element__addon">Include </span>
+                                                        <input id="filter-group-name-include" class="slds-input" type="text" placeholder="" />
+                                                    </div>
+                                                    <div class="slds-form-element__control slds-input-has-fixed-addon my-second">
+                                                        <span class="slds-form-element__addon">Exclude </span>
+                                                        <input id="filter-group-name-exclude" class="slds-input" type="text" placeholder="" />
+                                                    </div>
+                                                </div>
+                                                -->
+                                                <div class="slds-form-element filter-div" data-tclass="mytarget-feed-text">
+                                                    <label class="slds-form-element__label">Feed text</label>
+                                                    <div class="slds-form-element__control slds-input-has-fixed-addon">
+                                                        <span class="slds-form-element__addon">Include </span>
+                                                        <input id="filter-feed-word-include" class="slds-input" type="text" placeholder="" />
+                                                    </div>
+                                                    <div class="slds-form-element__control slds-input-has-fixed-addon my-second">
+                                                        <span class="slds-form-element__addon">Exclude </span>
+                                                        <input id="filter-feed-word-exclude" class="slds-input" type="text" placeholder="" />
+                                                    </div>
+                                                </div>
+
+                                            </form>
+                                            
+                                        </div>
+                                        <div class="slds-card__footer">
+                                            <button id="reset-filter-button" class="slds-button slds-button--neutral">Reset</button>
+
+                                        </div>
+                                        
+                                    </article>                  
+                                </div>
+                                <div id="otab0">
+                                    <article class="slds-card my-filter-card">
+                                        <div class="slds-card__header slds-grid">
+                                            <header class="slds-media slds-media--center slds-has-flexi-truncate">
+                                                <div class="slds-media__body slds-truncate">
+                                                    <span class="my-option-title">Welcome!</span>
+                                                </div>
+                                            </header>
+                                        </div>
+                                        <div class="slds-card__body my-message">
+                                         <!-- welcome content -->
+                                        </div>
+                                        <div class="slds-card__footer">
+                                            
+                                        </div>
+                                    </article>                  
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-close" id="addtagmodal1">
+                    <div class="slds-modal__container">
+                        <div class="slds-modal__header">
+                            <button class="slds-button slds-modal__close slds-button--icon-inverse" onclick="closeAddTagModal();">
+                                <svg aria-hidden="true" class="slds-button__icon slds-button__icon--large">
+                                    <use href="{!URLFOR($Resource.SLDS212, 'assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+                                </svg>
+                                <span class="slds-assistive-text">Close</span>
+                            </button>
+                            <h2 id="header43" class="slds-text-heading--medium">Add Tags</h2>
+                        </div>
+                        <div class="slds-modal__content slds-p-around--medium" style="height:60%;">
+                            <div>
+                                <div class="slds-form-element myinputbox slds-lookup slds-is-close" id="addtagsearchlookup">
+                                    <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon--left">
+                                        <svg aria-hidden="true" class="slds-input__icon slds-icon-text-default">
+                                            <use href="{!URLFOR($Resource.SLDS212, 'assets/icons/utility-sprite/svg/symbols.svg#search')}"></use>
+                                        </svg>
+                                        <form id="searchtagform" autocomplete="off">
+                                            <input id="addtagsearchinput" class="slds-input" type="text" placeholder="Tag name..." />
+                                        </form>
+                                    </div>
+                                    <div class="slds-lookup__menu" id="lookup-357">
+                                        <div class="slds-lookup__item--label slds-text-body--small">My Tags</div>
+                                        <ul class="slds-lookup__list" role="listbox" id="taglookups">
+                                        </ul>
+                                        <ul class="slds-lookup__list" role="listbox" id="newtaglookup">
+                                            <li role="presentation" id="newtaglookup">
+                                                <span class="slds-lookup__item-action slds-media slds-media--center" id="lookup-option-359" role="option">
+                                                    
+                                                    <div class="slds-media__body">
+                                                        <div class="slds-lookup__result-text">Create "<span id="addtagnewword"></span>"..</div>
+                                                    </div>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <p class="my-badges" id="selectedtags"></p>
+                                    </div>
+                                </div>    
+                                
+                            </div>
+                        </div>
+                        <div class="slds-modal__footer">
+                            <button class="slds-button slds-button--neutral" onclick="closeAddTagModal()">Cancel</button>
+                            <button class="slds-button slds-button--neutral slds-button--brand" id="linkFeedToTagsBtn">Save</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-backdrop slds-backdrop--close" id="addtagmodal2"></div>
+                
+                <div class="slds-spinner_container hidden" id="loadingmarker">
+                    <div class="slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+                
+                <div id="count-indicator">
+                    <article class="slds-card my-filter-card">
+                        <div class="slds-card__header slds-grid" style="margin-top: 0;">
+                        </div>
+                        <div class="slds-card__body my-message">
+                            
+                            <center>
+                                <span style="margin-right: 8px;font-size:1.5rem;" id="currentfeedcount">---</span>
+                                /
+                                <span style="margin-right: 8px;font-size:1rem;margin-left: 8px;" id="feedscount2">---</span>
+                                
+                            </center>
+                        </div>
+                        <div class="slds-card__footer" style="padding-bottom: 0;">                            
+                        </div>
+                    </article>                  
+                    
+                </div>
+                
+                <p id="page-top"><a href="#"><i class="fa fa-chevron-up" aria-hidden="true"></i></a></p>
+                <div id="my-right-menu" class="slds-dropdown slds-dropdown--left my-right-menu">
+                    <ul class="slds-dropdown__list" role="menu">
+                        <li class="slds-dropdown__item" role="presentation">
+                            <a target="_blank" href="https://[depend_on_your_salesforce_org_fqdn].my.salesforce.com/_ui/core/userprofile/UserProfilePage" role="menuitem" tabindex="0">
+                                <span class="slds-truncate">Show my profile</span>
+                            </a>
+                        </li>
+                        <li class="slds-dropdown__item" role="presentation">
+                            <a id="logoutButton" href="javascript:void(0);" role="menuitem" tabindex="-1">
+                                <span class="slds-truncate">Log out</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                
+            </div>
+            <apex:includeScript value="{!$Resource.jquery_js}" />
+            <apex:includeScript value="{!$Resource.moment_js}" />
+            <apex:includeScript value="{!$Resource.feedfinder_app_js}" />
+            <c:feedfinder_app_googleanalytics ga_ua="{!$Setup.FeedFinderAppSetting__c.FeedFinderApp__GA_UA__c}"/>
+            
+        </body>
+    </html>
+</apex:page>

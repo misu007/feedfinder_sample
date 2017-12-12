@@ -1,0 +1,236 @@
+global class ChatterRestAPI {
+    public class ChatterRestAPIException extends Exception {}
+    
+    // Feed-Items, Specific Feed Item
+    public static String getProfileInfo(String accessToken, String idToken) {    
+        HttpRequest req = createGetRequest2(accessToken, idToken);
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getProfileInfo: ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+    
+    
+    // Feed-Items, Specific Feed Item
+    // https://developer.salesforce.com/docs/atlas.en-us.200.0.chatterapi.meta/chatterapi/connect_resources_feed-items_SpecificFeedItem.htm
+    public static String getFeedElementById(String accessToken, String feedElementId) {
+        HttpRequest req = createGetRequest(accessToken, '/chatter/feed-elements/' + feedElementId, null);
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getFeedElementById:'+ feedElementId + ': ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+    
+    // Company Feed Resources
+    // https://developer.salesforce.com/docs/atlas.en-us.200.0.chatterapi.meta/chatterapi/connect_resource_feeds_company.htm
+    public static String getFeedElementsByKeyword(String accessToken, String keyword, String pageToken) {    
+        
+        Map<String, String> parameters = BASE_QUERY.clone();
+        parameters.put('q', EncodingUtil.urlEncode(keyword, 'UTF-8'));
+        if (!isNullOrEmpty(pageToken)) {
+            parameters.put('page', pageToken);
+        }
+        HttpRequest req = createGetRequest(accessToken, '/chatter/feeds/company/feed-elements', parameters);
+        
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getFeedElementsByKeyword:' + keyword + ': ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+    
+    // User Profile Information
+    // https://developer.salesforce.com/docs/atlas.en-us.200.0.chatterapi.meta/chatterapi/connect_resources_users_UserProfileInformation.htm
+    public static String getUserByUserId(String accessToken, String userId) {    
+        HttpRequest req = createGetRequest(accessToken, '/chatter/users/' + (userId != null ? userId : 'me'), null);
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getUserByUserId:' + userId + ': ' + res.getBody());
+        } 
+        system.debug('getUserByUserId'+res.getBody());
+        return res.getBody(); 
+    }
+    
+    // Feed Elements, Batch Get
+    // https://developer.salesforce.com/docs/atlas.en-us.200.0.chatterapi.meta/chatterapi/connect_resources_feed_element_batch.htm
+    public static String getFeedElementsByIds(String accessToken, List<String> feedElementIds) {
+        if (feedElementIds.isEmpty()) {
+             throw new ChatterRestAPIException('ChatterRestAPIException:getFeedElementsByIds:feedElementIds'+ feedElementIds + ': \'feedElementIds\' cannot be empty list');
+        }
+        HttpRequest req = createGetRequest(accessToken, '/chatter/feed-elements/batch/' + String.join(feedElementIds, ','), null);
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getFeedElementsByIds:'+ String.join(feedElementIds, ',') + ': ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+
+    // Feed Elements Capability, Comments Items
+    // https://developer.salesforce.com/docs/atlas.en-us.200.0.chatterapi.meta/chatterapi/connect_resources_feed_element_capability_comments_items.htm#connect_resources_feed_element_capability_comments_items
+    public static String getCommentsByFeedElementId(String accessToken, String feedElementId) {
+        Map<String, String> query = new Map<String, String> {
+            'pageSize' => '3'
+        };
+        
+        HttpRequest req = createGetRequest(accessToken, '/chatter/feed-elements/' + feedElementId + '/capabilities/comments/items', query);
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getCommentsByFeedElementId:'+ feedElementId + ': ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+    
+    
+    // Get feed elements with on like numbers
+    public static String getFeedElementsLikeCountByKeyword(String accessToken, String keyword, String pageToken) {    
+        Map<String, String> query = new Map<String, String> {
+            'q'       => EncodingUtil.urlEncode(keyword, 'UTF-8'),
+            'include' => String.join(new List<String>{'/elements/feedElement/capabilities/chatterLikes/page/total','/elements/feedElement/id'}, '%7C'),
+            'density'            => 'AllUpdates',      // AllUpdates or FewerUpdates 
+            'elementsPerBundle'  => '10',              // 0 - 10 
+            'pageSize'           => '100',             // 1 - 100
+            'recentCommentCount' => '0',              // 0 - 25 
+            'sort'               => 'CreatedDateDesc' // CreatedDateDesc  or LastModifiedDateDesc
+        };
+        if (!isNullOrEmpty(pageToken)) {
+            query.put('page', pageToken);
+        }
+        HttpRequest req = createGetRequest(accessToken, '/chatter/feeds/company/feed-elements', query);
+        
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getFeedElementsLikeCountByKeyword:' + keyword + ': ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+    
+    // Get feed elements with on like numbers
+    public static String getFeedElementIdsByKeyword(String accessToken, String keyword, String pageToken) {    
+        Map<String, String> query = new Map<String, String> {
+            'q'       => EncodingUtil.urlEncode(keyword, 'UTF-8'),
+            'include' => String.join(new List<String>{'/elements/feedElement/id'}, '%7C'),
+            'density'            => 'AllUpdates',      // AllUpdates or FewerUpdates 
+            'elementsPerBundle'  => '10',              // 0 - 10 
+            'pageSize'           => '100',             // 1 - 100
+            'recentCommentCount' => '0',              // 0 - 25 
+            'sort'               => 'CreatedDateDesc' // CreatedDateDesc  or LastModifiedDateDesc
+        };
+        if (!isNullOrEmpty(pageToken)) {
+            query.put('page', pageToken);
+        }
+        HttpRequest req = createGetRequest(accessToken, '/chatter/feeds/company/feed-elements', query);
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getFeedElementIdsByKeyword:' + keyword + ': ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+    
+    // Get feed elements with on like numbers
+    public static String getFeedElementIdsOfMyNews(String accessToken) {    
+        HttpRequest req = createGetRequest(accessToken, '/chatter/feeds/news/me/feed-elements', null);
+        HttpResponse res = (new Http()).send(req);
+        if (res.getStatusCode() != 200) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:getFeedElementIdsOfMyNews: ' + res.getBody());
+        } 
+        return res.getBody(); 
+    }
+   
+    /*
+     * PRIVATE CONSTANTS
+     */ 
+
+    private static final String SERVICE  = '/services/data/v41.0';
+    private static final List<String> INCLUDE_LIST = new List<String> { 
+        '/nextPageUrl',
+        '/elements/feedElement/capabilities/chatterLikes/page/total',
+        '/elements/feedElement/capabilities/topics/items/topic/name',
+        '/elements/feedElement/capabilities/topics/items/topic/id',
+        '/elements/feedElement/capabilities/link/url',
+        '/elements/feedElement/capabilities/link/urlName',
+        '/elements/feedElement/capabilities/poll/choices',
+        '/elements/feedElement/capabilities/poll/myChoiceId',
+        '/elements/feedElement/capabilities/poll/totalVoteCount',
+        '/elements/feedElement/capabilities/files',
+        '/elements/feedElement/capabilities/poll',
+        '/elements/feedElement/capabilities/questionAndAnswers', 
+        '/elements/feedElement/capabilities/comments/page',
+        '/elements/feedElement/actor/displayName',
+        '/elements/feedElement/actor/url',   
+        '/elements/feedElement/actor/id',   
+        '/elements/feedElement/actor/photo/smallPhotoUrl',
+        '/elements/feedElement/body/messageSegments',
+        '/elements/feedElement/body/text',
+        '/elements/feedElement/relativeCreatedDate',
+        '/elements/feedElement/parent/id',
+        '/elements/feedElement/parent/name',
+        '/elements/feedElement/id',
+        '/elements/feedElement/createdDate'
+            };
+    private static final Map<String, String> BASE_QUERY = new Map<String, String> {
+        'density'            => 'AllUpdates',      // AllUpdates or FewerUpdates 
+        'elementsPerBundle'  => '10',              // 0 - 10 
+        'pageSize'           => '100',             // 1 - 100
+        'recentCommentCount' => '25',              // 0 - 25 
+        'sort'               => 'CreatedDateDesc', // CreatedDateDesc  or LastModifiedDateDesc
+        'include'            => String.join(INCLUDE_LIST, '%7C')
+    };
+    
+    /*
+     * PRIVATE METHODS
+     */
+     private static HttpRequest createGetRequest(String accessToken, String resource, Map<String, String> parameters) {
+        if (isNullOrEmpty(accessToken)) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:createGetRequest:accessToken:'+ accessToken + ': \'accessToken\' cannot be null');
+        } 
+        if (isNullOrEmpty(resource)) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:createGetRequest:resource:'+ resource + ': \'resource\' cannot be null');
+        }
+         String instanceUrl = FeedFinderAppSetting__c.getOrgDefaults().orgURL__c;
+         if (instanceUrl == null || !instanceUrl.contains('http')){
+             throw new ChatterRestAPIException('ChatterRestAPIException:createGetRequest:instanceUrl:'+ instanceUrl + ': \'instanceUrl\' is invaild');
+         }
+        String endpoint = instanceUrl + SERVICE + resource;
+        if (parameters != null && !parameters.isEmpty()) {
+            endpoint += '?' + buildQueryString(parameters);
+        }
+    
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint(endpoint);
+        req.setHeader('Authorization', 'Bearer ' + EncodingUtil.urlDecode(accessToken, 'UTF-8'));
+        //req.setHeader('Accept', 'application/xml');
+        req.setMethod('GET');
+        req.setTimeout(60000);
+        return req;    
+    }
+    private static HttpRequest createGetRequest2(String accessToken, String resource) {
+        if (isNullOrEmpty(accessToken)) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:createGetRequest:accessToken:'+ accessToken + ': \'accessToken\' cannot be null');
+        } 
+        if (isNullOrEmpty(resource)) {
+            throw new ChatterRestAPIException('ChatterRestAPIException:createGetRequest:resource:'+ resource + ': \'resource\' cannot be null');
+        }
+        String endpoint = resource;
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint(endpoint);
+        req.setHeader('Authorization', 'Bearer ' + EncodingUtil.urlDecode(accessToken, 'UTF-8'));
+        req.setMethod('GET');
+        req.setTimeout(60000);
+        return req;    
+    }
+    
+    private static String buildQueryString(Map<String, String> parameters){
+        String ret = '';
+        for (String key : parameters.keySet()) {
+            ret += key + '=' + parameters.get(key) + '&';
+        }
+        return ret.removeEnd('&');
+    }
+    
+    private static Boolean isNullOrEmpty(Object o){
+        return o == null || String.valueOf(o) == '';
+    }
+
+}

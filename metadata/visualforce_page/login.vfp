@@ -1,0 +1,17 @@
+<apex:page controller="FeedFinderLoginController" id="Page" showHeader="false" standardStylesheets="false" cache="false">
+    <link rel="shortcut icon" href="{!$Resource.favicon}"/>
+    <link rel="icon" type="image/png" href="{!$Resource.favicon}"/>
+    <script>
+    window.onload = function(){
+        var hash = location.hash;
+        var redirectURL;
+        if (hash.length > 10){
+			var gets = location.hash.replace(/^#/, '?');
+            redirectURL = "{!rURL}" + gets;
+		} else {
+            redirectURL = "{!redirectURL}";
+        }
+        location.href = redirectURL;
+    }
+    </script>
+</apex:page>

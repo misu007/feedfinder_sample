@@ -1,0 +1,19 @@
+global class FeedFinderLoginController {
+    private String cKey {get;set;}
+    private String loginURL {get;set;}
+    
+    public String rURL {get;set;}
+    public String redirectURL {get;set;}
+    
+    public FeedFinderLoginController() {        
+        FeedFinderAppSetting__c ffs = FeedFinderAppSetting__c.getOrgDefaults();
+        cKey = ffs.cKey__c;
+        rURL = ffs.rURL__c;
+        loginURL = ffs.loginURL__c;
+        redirectURL = 'https://login.salesforce.com/services/oauth2/authorize?response_type=token&client_id='
+            + cKey
+            + '&redirect_uri='
+            + loginURL;        
+    }
+    
+}

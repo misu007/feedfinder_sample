@@ -1,0 +1,154 @@
+<apex:component >
+    <apex:attribute name="ga_ua" type="String" description=""/>
+    <apex:attribute name="ga_page" type="String" description=""/>
+    <apex:attribute name="ga_title" type="String" description=""/>
+    
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                            })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+    
+    ga('create', '{!ga_ua}', 'auto');
+    
+    var init_page = "{!ga_page}";
+    var init_title = "{!ga_title}";
+    
+    if (init_page.length > 1 && init_title.length > 1){
+      	ga_action(init_page, init_title);  
+    }
+    
+    function ga_set_user(userId){
+        ga('set', 'userId', userId);
+    }
+
+    function ga_action(page, title){
+        ga('send', 'pageview', {
+            'page': page,
+            'title': title
+        });
+    }
+    
+
+
+    //
+    // ログイン
+    //
+    function ga_page_login(){
+        ga('send', 'pageview', {
+            'page': '/page/login/',
+            'title': 'ログインページ表示'
+        });
+    }
+    function ga_action_login(){
+        ga('send', 'pageview', {
+            'page': '/action/login/',
+            'title': 'ログイン実行'
+        });
+    }    
+    function ga_success_login(){
+        ga('send', 'pageview', {
+            'page': '/success/login/',
+            'title': 'ログイン成功'
+        });
+    }   
+    
+    //
+    // ホーム画面
+    //    
+    function ga_page_app(){
+        ga('send', 'pageview', {
+            'page': '/page/app/',
+            'title': 'ホーム画面'
+        });
+    }    
+        
+    //
+    // ワード検索
+    //
+    function ga_page_search(){
+        ga('send', 'pageview', {
+            'page': '/page/search/',
+            'title': 'ワード検索ページ表示'
+        });
+    }
+    function ga_action_search(){
+        ga('send', 'pageview', {
+            'page': '/action/search/',
+            'title': 'ワード検索実行'
+        });
+    }  
+    //
+    // タグ追加
+    //
+    function ga_modal_add_tag(){
+        ga('send', 'pageview', {
+            'page': '/modal/add_tag/',
+            'title': 'タグ追加モーダル表示'
+        });
+    }
+    function ga_action_add_tag(){
+        ga('send', 'pageview', {
+            'page': '/action/add_tag/',
+            'title': 'タグ追加実行'
+        });
+    }  
+    //
+    // タグリリース
+    //
+    function ga_action_release_tag(){
+        ga('send', 'pageview', {
+            'page': '/action/release_tag/',
+            'title': 'タグリリース実行'
+        });
+    }  
+    //
+    // 削除
+    //
+    function ga_action_delete_tag(){
+        ga('send', 'pageview', {
+            'page': '/action/delete_tag/',
+            'title': 'タグ削除実行'
+        });
+    }  
+    
+            
+    //
+    // タグから検索
+    //
+    function ga_page_tag_search(){
+        ga('send', 'pageview', {
+            'page': '/page/tag_search/',
+            'title': 'タグ検索ページ表示'
+        });
+    }
+    function ga_action_tag_search(){
+        ga('send', 'pageview', {
+            'page': '/action/tag_search/',
+            'title': 'タグ検索実行'
+        });
+    }  
+                
+    //
+    // エラー
+    //
+    function ga_error_auth(){
+        ga('send', 'pageview', {
+            'page': '/error/auth/',
+            'title': '一般・認証エラー'
+        });
+    }
+    function ga_error_400(){
+        ga('send', 'pageview', {
+            'page': '/error/400/',
+            'title': '400系エラー'
+        });
+    }  
+    function ga_error_500(){
+        ga('send', 'pageview', {
+            'page': '/error/500/',
+            'title': '500系エラー'
+        });
+    }  
+    </script>
+</apex:component>
